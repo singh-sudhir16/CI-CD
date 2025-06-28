@@ -10,7 +10,6 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                // Remove sudo unless absolutely needed
                 sh 'npm install'
             }
         }
