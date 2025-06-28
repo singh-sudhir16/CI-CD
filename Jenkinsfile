@@ -30,10 +30,37 @@ pipeline {
                 bat 'npm run build'
             }
         }
-	stage('Build Image'){
-	    steps {
-		sh 'docker build -t my-node-app:1.0 .'
-	    }
-	}
+
+        stage('Build Docker Image') {
+            steps {
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker_cred',
+                    usernameVariable: 'DOCKERHUB_USERNAME',
+                    passwordVariable: 'DOCKERHUB_PASSWORD'
+                )]) {
+                    bat '''
+                        echo %DOCKERHUB_PASSWORD% | docker login -u %DOCKERHUB_USERNAME% --password-stdin
+                        docker tag %IMAGE_NAME%:%IMAGE_TAG% %IMAGE_NAME%:%IMAGE_TAG%
+                        docker push %IMAGE_NAME%:%IMAGE_TAG%
+                        docker logout
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build and Push successful.'
+        }
+        failure {
+            echo '❌ Pipeline failed.'
+        }
     }
 }
